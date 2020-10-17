@@ -1,5 +1,6 @@
 package com.github.henning742.squarehomeupdater
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
@@ -9,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import lib.folderpicker.FolderPicker
+import java.io.IOException
 
 const val FOLDERPICKER_CODE = 1903
 
@@ -22,19 +24,35 @@ class MainActivity : AppCompatActivity() {
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener { view ->
 //            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
 //                    .setAction("Action", null).show()
-            val intent = Intent(this, FolderPicker::class.java)
+//            val intent = Intent(this, FolderPicker::class.java)
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                // Provide read access to files and sub-directories in the user-selected
+                // directory.
+                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+            }
             startActivityForResult(intent, FOLDERPICKER_CODE)
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
+    override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
+        super.onActivityResult(requestCode, resultCode, intent)
 
         if (requestCode == FOLDERPICKER_CODE && resultCode == Activity.RESULT_OK) {
-            val folderLocation = data!!.getStringExtra("data")
-//            Log.i("folderLocation", folderLocation)
-            Snackbar.make(findViewById(android.R.id.content), folderLocation.toString(), Snackbar.LENGTH_LONG)
+            intent?.data?.also { uri ->             // Perform operations on the document using its URI.
+                Snackbar.make(findViewById(android.R.id.content), uri.toString(), Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show()
+
+
+                try {
+                    FileHelper.CopyFolder(uri.toString(), "_modified")
+                }
+                catch (e: IOException) {
+                    // handler
+                    Snackbar.make(findViewById(android.R.id.content), e.localizedMessage, Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show()
+                }
+            }
+
         }
     }
 
