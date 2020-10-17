@@ -33,6 +33,10 @@ class FileHelperKt {
                         out!!.write(buffer, 0, read)
                     }
 
+                    inFile.close()
+                    out!!.flush()
+                    out.close()
+
                 }
             }
         }

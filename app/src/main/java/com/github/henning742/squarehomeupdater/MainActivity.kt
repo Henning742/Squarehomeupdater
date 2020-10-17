@@ -15,6 +15,10 @@ import lib.folderpicker.FolderPicker
 import java.io.IOException
 import java.lang.Exception
 import androidx.documentfile.provider.DocumentFile
+import com.beust.klaxon.JsonArray
+import com.beust.klaxon.JsonObject
+import com.beust.klaxon.Parser
+import java.lang.StringBuilder
 import java.util.*
 
 const val FOLDERPICKER_CODE = 1903
@@ -50,17 +54,42 @@ class MainActivity : AppCompatActivity() {
                 val backupFolder = DocumentFile.fromTreeUri(this, uri)
                 val subFolders = backupFolder?.listFiles()?.sortedByDescending { it.lastModified() }
 
-                for (f in subFolders!!){
-                    if (f.name!!.takeLast(1)[0].isDigit())
-                    {
+                for (f in subFolders!!) {
+                    if (f.name!!.takeLast(1)[0].isDigit()) {
                         Log.i("asdfg", f.name.toString())
 //                        Log.i("asdfg", Date(f.lastModified()).toString())
 //                        // copy directory and modify files.
 //                        // should check if new folder exists?
 //                        Log.i("asdfg", "Found the folder.")
 
-                        val newDirUrl = FileHelperKt.createDirectory(contentResolver, backupFolder.uri, f.name.toString()+"_modified")
+                        val newDirUrl = FileHelperKt.createDirectory(
+                            contentResolver,
+                            backupFolder.uri,
+                            f.name.toString() + "_modified"
+                        )
                         FileHelperKt.copyFolder(this, contentResolver, f, newDirUrl!!)
+
+                        val folders = mutableListOf<DocumentFile>()
+                        val layout = mutableListOf<DocumentFile>()
+                        for (ff in f.listFiles()) {
+                            if (ff.isDirectory) {
+                                if (ff.name == "folders") {
+                                    folders.add(ff)
+                                } else if (ff.name == "layout") {
+                                    for (jsfile in ff.listFiles()) {
+                                        val jso =
+                                            JsonUtil.readJsonFromDocument(contentResolver, jsfile)
+
+//                                        val str = (jso as JsonArray<JsonObject>)[0]["t"] as String
+//                                        val parser: Parser = Parser.default()
+//                                        val obj = (parser.parse(StringBuilder(str)) as JsonObject)["c"]
+
+                                        JsonUtil.writeJsonToDocument(contentResolver, jso.toJsonString(), jsfile)
+                                    }
+
+                                }
+                            }
+                        }
 
 
                         break
