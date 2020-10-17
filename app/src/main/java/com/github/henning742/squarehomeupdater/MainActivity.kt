@@ -1,25 +1,18 @@
 package com.github.henning742.squarehomeupdater
 
-import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.provider.DocumentsContract
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
-import lib.folderpicker.FolderPicker
-import java.io.IOException
-import java.lang.Exception
 import androidx.documentfile.provider.DocumentFile
 import com.beust.klaxon.JsonArray
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
 import java.lang.StringBuilder
-import java.util.*
 
 const val FOLDERPICKER_CODE = 1903
 
@@ -69,26 +62,80 @@ class MainActivity : AppCompatActivity() {
                         )
                         FileHelperKt.copyFolder(this, contentResolver, f, newDirUrl!!)
 
-                        val folders = mutableListOf<DocumentFile>()
-                        val layout = mutableListOf<DocumentFile>()
+                        val layouts = mutableListOf<JsonArray<JsonObject>>()
+                        val folders1 = mutableListOf<List<String>>()
+                        val folders2 = mutableListOf<List<String>>()
                         for (ff in f.listFiles()) {
                             if (ff.isDirectory) {
                                 if (ff.name == "folders") {
-                                    folders.add(ff)
-                                } else if (ff.name == "layout") {
                                     for (jsfile in ff.listFiles()) {
                                         val jso =
                                             JsonUtil.readJsonFromDocument(contentResolver, jsfile)
 
 //                                        val str = (jso as JsonArray<JsonObject>)[0]["t"] as String
 //                                        val parser: Parser = Parser.default()
-//                                        val obj = (parser.parse(StringBuilder(str)) as JsonObject)["c"]
+//                                        val obj =
+//                                            (parser.parse(StringBuilder(str)) as JsonObject)["c"] as String
+                                        val f1 = mutableListOf<String>()
+                                        val f2 = mutableListOf<String>()
 
-                                        JsonUtil.writeJsonToDocument(contentResolver, jso.toJsonString(), jsfile)
+                                        for (str in ((jso as JsonObject) ["i"] as JsonArray<*>).filterIsInstance<String>())
+                                        {
+                                            f1.add(str.split("/")[0])
+                                            f2.add(str.split("/")[1])
+                                        }
+
+                                        folders1.add(f1)
+                                        folders2.add(f2)
                                     }
 
+                                } else if (ff.name == "layout") {
+                                    for (jsfile in ff.listFiles()) {
+
+                                        layouts.add(
+                                            (JsonUtil.readJsonFromDocument(
+                                                contentResolver,
+                                                jsfile
+                                            ) as JsonArray<JsonObject>)
+                                        )
+                                    }
                                 }
                             }
+                        }
+
+                        // process the layouts.
+                        for (jsArray in layouts) {
+                            try {
+                                val d = jsArray[0]["t"] as String
+                            } catch (e: Exception) {
+                                continue
+                            }
+
+                            var maxCol = 0
+                            var maxCount = 0
+                            val names = mutableListOf<String>()
+                            // assume no entry appears in more than one folder.
+                            for (entry in jsArray)
+                            {
+                                val count = entry["O"] as Int
+                                val col = entry["X"] as Int
+                                names.add(((Parser.default().parse(
+                                    StringBuilder(
+                                        entry["t"] as String
+                                    )
+                                ) as JsonObject)["c"] as String).split("/")[0])
+
+                                maxCol = if (col > maxCol) col else maxCol
+                                maxCount = if (count > maxCount) count else maxCount
+                            }
+
+                            val cnt = folders1.map{
+                                it.intersect(names)
+                            }
+
+                            Log.i("adsag", cnt.toString())
+
+
                         }
 
 
