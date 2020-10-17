@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.provider.DocumentsContract
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
@@ -11,6 +13,9 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import lib.folderpicker.FolderPicker
 import java.io.IOException
+import java.lang.Exception
+import androidx.documentfile.provider.DocumentFile
+import java.util.*
 
 const val FOLDERPICKER_CODE = 1903
 
@@ -39,18 +44,39 @@ class MainActivity : AppCompatActivity() {
 
         if (requestCode == FOLDERPICKER_CODE && resultCode == Activity.RESULT_OK) {
             intent?.data?.also { uri ->             // Perform operations on the document using its URI.
-                Snackbar.make(findViewById(android.R.id.content), uri.toString(), Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show()
+//                Snackbar.make(findViewById(android.R.id.content), uri.toString(), Snackbar.LENGTH_LONG)
+//                    .setAction("Action", null).show()
+
+                val backupFolder = DocumentFile.fromTreeUri(this, uri)
+                val subFolders = backupFolder?.listFiles()?.sortedByDescending { it.lastModified() }
+
+                for (f in subFolders!!){
+                    if (f.name!!.takeLast(1)[0].isDigit())
+                    {
+                        Log.i("asdfg", f.name.toString())
+//                        Log.i("asdfg", Date(f.lastModified()).toString())
+//                        // copy directory and modify files.
+//                        // should check if new folder exists?
+//                        Log.i("asdfg", "Found the folder.")
+
+                        val newDirUrl = FileHelperKt.createDirectory(contentResolver, backupFolder.uri, f.name.toString()+"_modified")
+                        FileHelperKt.copyFolder(this, contentResolver, f, newDirUrl!!)
 
 
-                try {
-                    FileHelper.CopyFolder(uri.toString(), "_modified")
+                        break
+                    }
                 }
-                catch (e: IOException) {
-                    // handler
-                    Snackbar.make(findViewById(android.R.id.content), e.localizedMessage, Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show()
-                }
+
+//                val path = FileUtil.getFullPathFromTreeUri(uri, this)
+//
+//                try {
+//                    FileHelper.CopyFolder(path+"/.backup_3", "_modified")
+//                }
+//                catch (e: Exception) {
+//                    // handler
+//                    Snackbar.make(findViewById(android.R.id.content), e.localizedMessage, Snackbar.LENGTH_LONG)
+//                        .setAction("Action", null).show()
+//                }
             }
 
         }

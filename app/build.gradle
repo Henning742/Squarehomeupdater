@@ -46,7 +46,7 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment-ktx:2.2.2'
     implementation 'androidx.navigation:navigation-ui-ktx:2.2.2'
     implementation "commons-io:commons-io:+"
-
+    implementation "androidx.documentfile:documentfile:1.0.1"
     implementation "androidx.activity:activity-ktx:1.2.0-beta01"
 
     implementation 'lib.kashif:folderpicker:2.4'
