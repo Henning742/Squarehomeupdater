@@ -82,8 +82,7 @@ class MainActivity : AppCompatActivity() {
                                         val f1 = mutableListOf<String>()
                                         val f2 = mutableListOf<String>()
 
-                                        for (str in ((jso as JsonObject) ["i"] as JsonArray<*>).filterIsInstance<String>())
-                                        {
+                                        for (str in ((jso as JsonObject)["i"] as JsonArray<*>).filterIsInstance<String>()) {
                                             f1.add(str.split("/")[0])
                                             f2.add(str.split("/")[1])
                                         }
@@ -120,22 +119,25 @@ class MainActivity : AppCompatActivity() {
                             var maxCol = 0
                             var maxCount = 0
                             val names = mutableListOf<String>()
+                            var currentCol = 0
                             // assume no entry appears in more than one folder.
-                            for (entry in jsArray)
-                            {
+                            for (entry in jsArray) {
                                 val count = entry["O"] as Int
                                 val col = entry["X"] as Int
-                                names.add(((Parser.default().parse(
-                                    StringBuilder(
-                                        entry["t"] as String
-                                    )
-                                ) as JsonObject)["c"] as String).split("/")[0])
+                                names.add(
+                                    ((Parser.default().parse(
+                                        StringBuilder(
+                                            entry["t"] as String
+                                        )
+                                    ) as JsonObject)["c"] as String).split("/")[0]
+                                )
 
                                 maxCol = if (col > maxCol) col else maxCol
                                 maxCount = if (count > maxCount) count else maxCount
+                                currentCol = col
                             }
 
-                            val cnt = folders1.map{
+                            val cnt = folders1.map {
                                 it.intersect(names).size
                             }
 
@@ -143,8 +145,7 @@ class MainActivity : AppCompatActivity() {
 
                             val folderIdx = cnt.indexOf(cnt.max())
 
-                            if (folderIdx >= 0)
-                            {
+                            if (folderIdx >= 0) {
                                 val folder1 = folders1[folderIdx]
                                 val folder2 = folders2[folderIdx]
                                 val ret = mutableListOf<JsonObject>()
@@ -152,16 +153,16 @@ class MainActivity : AppCompatActivity() {
                                 val no_move = names.intersect(folder1)
 
                                 jsArray.forEachIndexed { index, jsonObject ->
-                                    if (names[index] in no_move)
-                                    {
+                                    if (names[index] in no_move) {
                                         ret.add(jsonObject)
                                     }
                                 }
 
-                                var currentCol = 0
                                 folder1.forEachIndexed { index, s ->
-                                    if ( s !in no_move)
-                                    {
+                                    if (s !in no_move) {
+                                        currentCol = (currentCol + 1) % (maxCol + 1)
+                                        maxCount += 1
+
                                         ret.add(
                                             JsonObject(
                                                 mapOf(
@@ -180,17 +181,22 @@ class MainActivity : AppCompatActivity() {
                                             )
                                         )
 
-                                        maxCount += 1
-                                        currentCol = (currentCol + 1) % (maxCol + 1)
+
                                     }
                                 }
 
 
-                                JsonUtil.writeJsonToDocument(contentResolver, JsonArray(ret).toJsonString(), layoutsDoc[i])
-                            }
-                            else
-                            {
-                                JsonUtil.writeJsonToDocument(contentResolver, jsArray.toJsonString(), layoutsDoc[i])
+                                JsonUtil.writeJsonToDocument(
+                                    contentResolver,
+                                    JsonArray(ret).toJsonString(),
+                                    layoutsDoc[i]
+                                )
+                            } else {
+                                JsonUtil.writeJsonToDocument(
+                                    contentResolver,
+                                    jsArray.toJsonString(),
+                                    layoutsDoc[i]
+                                )
                             }
                         }
 
