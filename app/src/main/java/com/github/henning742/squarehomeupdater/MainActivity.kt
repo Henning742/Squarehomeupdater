@@ -62,10 +62,13 @@ class MainActivity : AppCompatActivity() {
                         )
                         FileHelperKt.copyFolder(this, contentResolver, f, newDirUrl!!)
 
+                        val newDirDoc = DocumentFile.fromTreeUri(this, newDirUrl)
+
                         val layouts = mutableListOf<JsonArray<JsonObject>>()
+                        val layoutsDoc = mutableListOf<DocumentFile>()
                         val folders1 = mutableListOf<List<String>>()
                         val folders2 = mutableListOf<List<String>>()
-                        for (ff in f.listFiles()) {
+                        for (ff in newDirDoc!!.listFiles()) {
                             if (ff.isDirectory) {
                                 if (ff.name == "folders") {
                                     for (jsfile in ff.listFiles()) {
@@ -91,12 +94,15 @@ class MainActivity : AppCompatActivity() {
 
                                 } else if (ff.name == "layout") {
                                     for (jsfile in ff.listFiles()) {
-
+                                        Log.i("alsfd", jsfile.name.toString())
                                         layouts.add(
                                             (JsonUtil.readJsonFromDocument(
                                                 contentResolver,
                                                 jsfile
                                             ) as JsonArray<JsonObject>)
+                                        )
+                                        layoutsDoc.add(
+                                            jsfile
                                         )
                                     }
                                 }
@@ -104,11 +110,11 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         // process the layouts.
-                        for (jsArray in layouts) {
+                        layouts.forEachIndexed { i, jsArray ->
                             try {
                                 val d = jsArray[0]["t"] as String
                             } catch (e: Exception) {
-                                continue
+                                return@forEachIndexed
                             }
 
                             var maxCol = 0
@@ -130,12 +136,62 @@ class MainActivity : AppCompatActivity() {
                             }
 
                             val cnt = folders1.map{
-                                it.intersect(names)
+                                it.intersect(names).size
                             }
 
                             Log.i("adsag", cnt.toString())
 
+                            val folderIdx = cnt.indexOf(cnt.max())
 
+                            if (folderIdx >= 0)
+                            {
+                                val folder1 = folders1[folderIdx]
+                                val folder2 = folders2[folderIdx]
+                                val ret = mutableListOf<JsonObject>()
+
+                                val no_move = names.intersect(folder1)
+
+                                jsArray.forEachIndexed { index, jsonObject ->
+                                    if (names[index] in no_move)
+                                    {
+                                        ret.add(jsonObject)
+                                    }
+                                }
+
+                                var currentCol = 0
+                                folder1.forEachIndexed { index, s ->
+                                    if ( s !in no_move)
+                                    {
+                                        ret.add(
+                                            JsonObject(
+                                                mapOf(
+                                                    "T" to 0,
+                                                    "O" to maxCount,
+                                                    "Ol" to maxCount,
+                                                    "X" to currentCol,
+                                                    "Xl" to currentCol,
+                                                    "t" to JsonObject(
+                                                        mapOf(
+                                                            "T" to 0,
+                                                            "c" to folder1[index] + "/" + folder2[index]
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+
+                                        maxCount += 1
+                                        currentCol = (currentCol + 1) % (maxCol + 1)
+                                    }
+                                }
+
+
+                                JsonUtil.writeJsonToDocument(contentResolver, JsonArray(ret).toJsonString(), layoutsDoc[i])
+                            }
+                            else
+                            {
+                                JsonUtil.writeJsonToDocument(contentResolver, jsArray.toJsonString(), layoutsDoc[i])
+                            }
                         }
 
 
