@@ -145,7 +145,7 @@ class MainActivity : AppCompatActivity() {
 
                             val folderIdx = cnt.indexOf(cnt.max())
 
-                            if (folderIdx >= 0) {
+                            if ((folderIdx >= 0).and(cnt.max()!! > 1)) {
                                 val folder1 = folders1[folderIdx]
                                 val folder2 = folders2[folderIdx]
                                 val ret = mutableListOf<JsonObject>()
