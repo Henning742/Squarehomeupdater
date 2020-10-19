@@ -72,6 +72,8 @@ class MainActivity : AppCompatActivity() {
                             if (ff.isDirectory) {
                                 if (ff.name == "folders") {
                                     for (jsfile in ff.listFiles()) {
+
+                                        Log.i("asdf", "Processing folder " + jsfile.name)
                                         val jso =
                                             JsonUtil.readJsonFromDocument(contentResolver, jsfile)
 
@@ -93,11 +95,12 @@ class MainActivity : AppCompatActivity() {
 
                                 } else if (ff.name == "layout") {
                                     for (jsfile in ff.listFiles()) {
-                                        Log.i("alsfd", jsfile.name.toString())
+                                        Log.i("asdf", "Processing layout " + jsfile.name)
                                         layouts.add(
                                             (JsonUtil.readJsonFromDocument(
                                                 contentResolver,
-                                                jsfile
+                                                jsfile,
+                                                true
                                             ) as JsonArray<JsonObject>)
                                         )
                                         layoutsDoc.add(
@@ -122,14 +125,31 @@ class MainActivity : AppCompatActivity() {
                             var currentCol = 0
                             // assume no entry appears in more than one folder.
                             for (entry in jsArray) {
+                                Log.i("adsf", entry.toJsonString())
                                 val count = entry["O"] as Int
                                 val col = entry["X"] as Int
-                                names.add(
-                                    ((Parser.default().parse(
+
+                                val t = entry["t"]
+                                var activity_name:String
+                                if (t is String)
+                                {
+                                    activity_name = (Parser.default().parse(
                                         StringBuilder(
                                             entry["t"] as String
                                         )
-                                    ) as JsonObject)["c"] as String).split("/")[0]
+                                    ) as JsonObject)["c"] as String
+                                }
+                                else if (t is JsonObject)
+                                {
+                                    activity_name = t["c"] as String
+                                }
+                                else
+                                {
+                                    throw NotImplementedError("Can't decide activity field type.")
+                                }
+
+                                names.add(
+                                    activity_name.split("/")[0]
                                 )
 
                                 maxCol = if (col > maxCol) col else maxCol
